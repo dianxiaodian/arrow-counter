@@ -1,15 +1,14 @@
 <!DOCTYPE html>
-
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="箭数计数器">
 <title>反曲弓训练计数器</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: pan-x pan-y; }
   body { min-height: 100vh; background: linear-gradient(135deg, #0f1923 0%, #1a2a3a 100%); color: #e8edf2; font-family: -apple-system, "Segoe UI", sans-serif; padding: 16px; padding-top: env(safe-area-inset-top, 16px); padding-bottom: env(safe-area-inset-bottom, 16px); }
   .container { max-width: 420px; margin: 0 auto; }
   .header { text-align: center; margin-bottom: 20px; }
@@ -214,6 +213,5 @@ function resetSession() {
 
 buildChips(); render();
 </script>
-
 </body>
 </html>
