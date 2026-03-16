@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="箭数计数器">
+<title>反曲弓训练计数器</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { min-height: 100vh; background: linear-gradient(135deg, #0f1923 0%, #1a2a3a 100%); color: #e8edf2; font-family: -apple-system, "Segoe UI", sans-serif; padding: 16px; padding-top: env(safe-area-inset-top, 16px); padding-bottom: env(safe-area-inset-bottom, 16px); }
+  .container { max-width: 420px; margin: 0 auto; }
+  .header { text-align: center; margin-bottom: 20px; }
+  .header-sub { font-size: 13px; letter-spacing: 3px; color: #5a8fa8; text-transform: uppercase; margin-bottom: 4px; }
+  .header-title { font-size: 24px; font-weight: 700; color: #c8dce8; }
+  .label { font-size: 11px; color: #5a8fa8; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .section { margin-bottom: 16px; }
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { padding: 5px 12px; border-radius: 20px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: #1e2f3d; color: #7a9ab8; transition: all 0.2s; }
+  .chip.active { background: #2a7fa8; color: #fff; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: #1a2a3a; border-radius: 14px; padding: 14px 16px; border: 1px solid #2a3f52; }
+  .stat-label { font-size: 11px; color: #5a8fa8; letter-spacing: 1px; margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: #c8dce8; line-height: 1; }
+  .stat-unit { font-size: 11px; color: #5a8fa8; margin-top: 2px; }
+  .progress-bar-bg { height: 6px; background: #1e2f3d; border-radius: 4px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
+  .dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .dot { width: 16px; height: 16px; border-radius: 50%; transition: all 0.2s; }
+  .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .btn-undo { width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer; background: #1e2f3d; color: #7a9ab8; font-size: 20px; }
+  .btn-add { flex: 1; height: 56px; border-radius: 16px; border: none; cursor: pointer; font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #2a7fa8, #1e5f7a); color: #fff; letter-spacing: 2px; box-shadow: 0 4px 20px rgba(42,127,168,0.3); transition: background 0.15s; active: background #1e6a8a; }
+  .btn-add:active { background: #1e6a8a; }
+  .btn-reset { width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer; background: #1e2f3d; color: #7a9ab8; font-size: 13px; }
+  .btn-end { width: 100%; height: 44px; border-radius: 14px; border: 1px dashed #2a3f52; cursor: pointer; font-size: 14px; font-weight: 600; background: transparent; color: #7a9ab8; margin-bottom: 16px; transition: all 0.2s; }
+  .btn-end:disabled { color: #2a3f52; cursor: not-allowed; }
+  .history-item { display: flex; justify-content: space-between; align-items: center; background: #1a2a3a; border-radius: 10px; padding: 10px 14px; border: 1px solid #2a3f52; margin-bottom: 6px; }
+  input[type=number] { width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px solid #2a3f52; background: #1e2f3d; color: #e8edf2; font-size: 14px; margin-top: 8px; }
+  .progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-sub">竞技反曲弓</div>
+    <div class="header-title">训练箭数计数器</div>
+  </div>
+
+  <div class="section">
+    <div class="label">射距</div>
+    <div class="chip-row" id="distanceChips"></div>
+  </div>
+
+  <div class="section">
+    <div class="label">每组箭数</div>
+    <div class="chip-row" id="endChips"></div>
+    <input type="number" id="customEndInput" placeholder="输入箭数" style="display:none" oninput="setCustomEnd(this.value)">
+  </div>
+
+  <div class="section">
+    <div class="progress-info">
+      <div class="label" style="margin:0">训练目标</div>
+      <div style="font-size:12px;color:#7a9ab8" id="progressText">0 / 72 箭</div>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar" id="progressBar" style="width:0%;background:linear-gradient(90deg,#2a7fa8,#5ab8d8)"></div>
+    </div>
+    <div class="chip-row" style="margin-top:8px" id="goalChips"></div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">本组进度</div><div class="stat-value" id="statEnd">0 / 6</div><div class="stat-unit">箭</div></div>
+    <div class="stat-card"><div class="stat-label">已完成组数</div><div class="stat-value" id="statEnds">0</div><div class="stat-unit">组</div></div>
+    <div class="stat-card"><div class="stat-label">本次训练</div><div class="stat-value" id="statSession">0</div><div class="stat-unit">箭</div></div>
+    <div class="stat-card"><div class="stat-label">累计总箭数</div><div class="stat-value" id="statTotal">0</div><div class="stat-unit">箭</div></div>
+  </div>
+
+  <div class="dots" id="dots"></div>
+
+  <div class="btn-row">
+    <button class="btn-undo" onclick="undoArrow()">↩</button>
+    <button class="btn-add" onclick="addArrow()">＋ 射箭</button>
+    <button class="btn-reset" onclick="resetSession()">重置</button>
+  </div>
+  <button class="btn-end" id="btnEnd" onclick="endGroup()" disabled>本组完成（已射 0 箭）</button>
+
+  <div id="historySection" style="display:none">
+    <div class="label">组历史记录</div>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<script>
+const DISTANCES = ["18m","25m","30m","50m","60m","70m","90m"];
+const GOALS = [36,72,90,144];
+const ENDS = [{label:"6箭/组",v:6},{label:"3箭/组",v:3},{label:"自定义",v:null}];
+
+let state = {
+  totalArrows: parseInt(localStorage.getItem("totalArrows")||"0"),
+  sessionArrows: 0, currentEnd: 0, endCount: 0,
+  arrowsPerEnd: 6, customEnd: 0, useCustom: false,
+  distance: "18m", goalArrows: 72, history: []
+};
+
+function getEnd() { return state.useCustom ? (state.customEnd||0) : state.arrowsPerEnd; }
+
+function render() {
+  const e = getEnd();
+  document.getElementById("statEnd").textContent = e > 0 ? `${state.currentEnd} / ${e}` : state.currentEnd;
+  document.getElementById("statEnds").textContent = state.endCount;
+  document.getElementById("statSession").textContent = state.sessionArrows;
+  document.getElementById("statTotal").textContent = state.totalArrows;
+  // progress
+  const pct = Math.min((state.sessionArrows / state.goalArrows) * 100, 100);
+  const bar = document.getElementById("progressBar");
+  bar.style.width = pct + "%";
+  bar.style.background = pct >= 100 ? "#2ecc71" : "linear-gradient(90deg,#2a7fa8,#5ab8d8)";
+  document.getElementById("progressText").textContent = `${state.sessionArrows} / ${state.goalArrows} 箭`;
+  // dots
+  const dotsEl = document.getElementById("dots");
+  if (e > 0) {
+    dotsEl.innerHTML = Array.from({length:e},(_,i)=>`<div class="dot" style="background:${i<state.currentEnd?'#2a7fa8':'#1e2f3d'};border:2px solid ${i<state.currentEnd?'#5ab8d8':'#2a3f52'}"></div>`).join("");
+  } else { dotsEl.innerHTML = ""; }
+  // end btn
+  const btn = document.getElementById("btnEnd");
+  btn.disabled = state.currentEnd === 0;
+  btn.textContent = `本组完成（已射 ${state.currentEnd} 箭）`;
+  // undo btn
+  document.querySelector(".btn-undo").style.opacity = state.sessionArrows === 0 ? "0.4" : "1";
+  // history
+  const hist = document.getElementById("historySection");
+  const list = document.getElementById("historyList");
+  if (state.history.length > 0) {
+    hist.style.display = "block";
+    list.innerHTML = state.history.map(h=>`
+      <div class="history-item">
+        <span style="color:#5ab8d8;font-weight:600;font-size:13px">第 ${h.end} 组</span>
+        <span style="color:${h.incomplete?'#e8a84a':'#c8dce8'};font-size:13px">${h.arrows} 箭 · ${h.distance}${h.incomplete?' ⚡':''}</span>
+        <span style="color:#5a8fa8;font-size:12px">${h.time}</span>
+      </div>`).join("");
+  } else { hist.style.display = "none"; }
+}
+
+function buildChips() {
+  // distance
+  document.getElementById("distanceChips").innerHTML = DISTANCES.map(d=>
+    `<button class="chip${d===state.distance?' active':''}" onclick="setDistance('${d}')">${d}</button>`).join("");
+  // ends
+  document.getElementById("endChips").innerHTML = ENDS.map(p=>
+    `<button class="chip${(!state.useCustom&&p.v===state.arrowsPerEnd)||(state.useCustom&&p.v===null)?' active':''}" onclick="setEnd(${p.v})">${p.label}</button>`).join("");
+  document.getElementById("customEndInput").style.display = state.useCustom ? "block" : "none";
+  // goals
+  document.getElementById("goalChips").innerHTML = GOALS.map(g=>
+    `<button class="chip${g===state.goalArrows?' active':''}" onclick="setGoal(${g})">${g}</button>`).join("");
+}
+
+function setDistance(d) { state.distance = d; buildChips(); render(); }
+function setEnd(v) {
+  if (v === null) { state.useCustom = true; }
+  else { state.useCustom = false; state.arrowsPerEnd = v; }
+  buildChips(); render();
+}
+function setCustomEnd(v) { state.customEnd = parseInt(v)||0; render(); }
+function setGoal(g) { state.goalArrows = g; buildChips(); render(); }
+
+function now() { return new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}); }
+
+function addArrow() {
+  const e = getEnd();
+  state.currentEnd++;
+  state.sessionArrows++;
+  state.totalArrows++;
+  localStorage.setItem("totalArrows", state.totalArrows);
+  if (e > 0 && state.currentEnd >= e) {
+    state.endCount++;
+    state.history.unshift({end:state.endCount,arrows:e,distance:state.distance,time:now(),incomplete:false});
+    if (state.history.length > 10) state.history.pop();
+    state.currentEnd = 0;
+  }
+  render();
+}
+
+function undoArrow() {
+  if (state.sessionArrows === 0) return;
+  const e = getEnd();
+  state.sessionArrows--;
+  state.totalArrows--;
+  localStorage.setItem("totalArrows", state.totalArrows);
+  if (state.currentEnd === 0 && state.endCount > 0) {
+    state.endCount--;
+    state.currentEnd = e > 0 ? e - 1 : 0;
+    state.history.shift();
+  } else {
+    state.currentEnd = Math.max(0, state.currentEnd - 1);
+  }
+  render();
+}
+
+function endGroup() {
+  if (state.currentEnd === 0) return;
+  state.endCount++;
+  state.history.unshift({end:state.endCount,arrows:state.currentEnd,distance:state.distance,time:now(),incomplete:true});
+  if (state.history.length > 10) state.history.pop();
+  state.currentEnd = 0;
+  render();
+}
+
+function resetSession() {
+  state.sessionArrows = 0; state.currentEnd = 0; state.endCount = 0; state.history = [];
+  render();
+}
+
+buildChips(); render();
+</script>
+</body>
+</html>
