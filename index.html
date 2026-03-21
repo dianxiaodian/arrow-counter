@@ -11,7 +11,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: pan-x pan-y; }
   body { min-height: 100vh; background: linear-gradient(135deg, #0f1923 0%, #1a2a3a 100%); color: #e8edf2; font-family: -apple-system, "Segoe UI", sans-serif; padding: 16px; padding-top: env(safe-area-inset-top, 16px); padding-bottom: env(safe-area-inset-bottom, 16px); }
   .container { max-width: 420px; margin: 0 auto; }
-  .header { text-align: center; margin-bottom: 20px; position: relative; }
+  .header { text-align: center; margin-bottom: 20px; }
   .header-sub { font-size: 13px; letter-spacing: 3px; color: #5a8fa8; text-transform: uppercase; margin-bottom: 4px; }
   .header-title { font-size: 24px; font-weight: 700; color: #c8dce8; }
   .tab-bar { display: flex; gap: 8px; margin-bottom: 20px; background: #1a2a3a; border-radius: 14px; padding: 4px; }
@@ -47,14 +47,17 @@
   input[type=number] { width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px solid #2a3f52; background: #1e2f3d; color: #e8edf2; font-size: 14px; margin-top: 8px; }
   .progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
   .empty-state { text-align: center; padding: 40px 20px; color: #5a8fa8; font-size: 14px; }
-  .session-summary { background: #1a2a3a; border-radius: 14px; padding: 14px 16px; border: 1px solid #2a3f52; margin-bottom: 8px; }
-  .summary-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px; }
-  .summary-label { color: #5a8fa8; }
-  .summary-value { color: #c8dce8; font-weight: 600; }
-  .btn-finish { width: 100%; height: 48px; border-radius: 14px; border: none; cursor: pointer; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, #27ae60, #1e8449); color: #fff; margin-bottom: 12px; }
-  .btn-finish:disabled { opacity: 0.3; cursor: not-allowed; }
   .page { display: none; }
   .page.active { display: block; }
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: flex-end; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #1a2a3a; border-radius: 20px 20px 0 0; padding: 20px 16px calc(env(safe-area-inset-bottom, 16px) + 16px); width: 100%; max-width: 420px; }
+  .modal-title { font-size: 13px; color: #5a8fa8; text-align: center; margin-bottom: 16px; letter-spacing: 1px; }
+  .modal-btn { width: 100%; height: 52px; border-radius: 14px; border: none; cursor: pointer; font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+  .modal-btn-danger { background: #2d1a1a; color: #e74c3c; }
+  .modal-btn-warn { background: #2a2a1a; color: #e8a84a; }
+  .modal-btn-cancel { background: #1e2f3d; color: #7a9ab8; margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -69,19 +72,16 @@
     <button class="tab" onclick="switchTab('history')">历史记录</button>
   </div>
 
-  <!-- 计数页 -->
   <div id="page-counter" class="page active">
     <div class="section">
       <div class="label">射距</div>
       <div class="chip-row" id="distanceChips"></div>
     </div>
-
     <div class="section">
       <div class="label">每组箭数</div>
       <div class="chip-row" id="endChips"></div>
       <input type="number" id="customEndInput" placeholder="输入箭数" style="display:none" oninput="setCustomEnd(this.value)">
     </div>
-
     <div class="section">
       <div class="progress-info">
         <div class="label" style="margin:0">训练目标</div>
@@ -92,28 +92,33 @@
       </div>
       <div class="chip-row" style="margin-top:8px" id="goalChips"></div>
     </div>
-
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-label">本组进度</div><div class="stat-value" id="statEnd">0 / 6</div><div class="stat-unit">箭</div></div>
       <div class="stat-card"><div class="stat-label">已完成组数</div><div class="stat-value" id="statEnds">0</div><div class="stat-unit">组</div></div>
       <div class="stat-card"><div class="stat-label">本次训练</div><div class="stat-value" id="statSession">0</div><div class="stat-unit">箭</div></div>
       <div class="stat-card"><div class="stat-label">累计总箭数</div><div class="stat-value" id="statTotal">0</div><div class="stat-unit">箭</div></div>
     </div>
-
     <div class="dots" id="dots"></div>
-
     <div class="btn-row">
       <button class="btn-undo" onclick="undoArrow()">↩</button>
       <button class="btn-add" onclick="addArrow()">＋ 射箭</button>
-      <button class="btn-reset" onclick="resetSession()">重置</button>
+      <button class="btn-reset" onclick="showReset()">重置</button>
     </div>
     <button class="btn-end" id="btnEnd" onclick="endGroup()" disabled>本组完成（已射 0 箭）</button>
-    <button class="btn-finish" id="btnFinish" onclick="finishSession()" disabled>完成本次训练并保存</button>
   </div>
 
-  <!-- 历史记录页 -->
   <div id="page-history" class="page">
     <div id="historyContent"></div>
+  </div>
+</div>
+
+<!-- 重置弹窗 -->
+<div class="modal-overlay" id="resetModal" onclick="closeReset(event)">
+  <div class="modal">
+    <div class="modal-title">选择重置范围</div>
+    <button class="modal-btn modal-btn-danger" onclick="doReset('session')">重置本次训练</button>
+    <button class="modal-btn modal-btn-warn" onclick="doReset('total')">重置累计总数</button>
+    <button class="modal-btn modal-btn-cancel" onclick="closeReset()">取消</button>
   </div>
 </div>
 
@@ -131,7 +136,7 @@ let state = {
 
 function getEnd() { return state.useCustom ? (state.customEnd||0) : state.arrowsPerEnd; }
 
-function saveSession() {
+function autoSave() {
   const sessions = JSON.parse(localStorage.getItem("sessions")||"[]");
   const session = {
     date: new Date().toLocaleDateString("zh-CN"),
@@ -139,9 +144,15 @@ function saveSession() {
     totalArrows: state.sessionArrows,
     distance: state.distance,
     goal: state.goalArrows,
-    ends: state.endHistory.slice().reverse()
+    ends: state.endHistory.slice()
   };
-  sessions.unshift(session);
+  // 当天同一次训练就更新第一条，否则新增
+  if (sessions.length > 0 && sessions[0].date === session.date && sessions[0].sessionId === state.sessionId) {
+    sessions[0] = { ...session, sessionId: state.sessionId };
+  } else {
+    if (!state.sessionId) state.sessionId = Date.now();
+    sessions.unshift({ ...session, sessionId: state.sessionId });
+  }
   if (sessions.length > 50) sessions.pop();
   localStorage.setItem("sessions", JSON.stringify(sessions));
 }
@@ -157,7 +168,7 @@ function renderHistory() {
   const sessions = JSON.parse(localStorage.getItem("sessions")||"[]");
   const el = document.getElementById("historyContent");
   if (sessions.length === 0) {
-    el.innerHTML = '<div class="empty-state">暂无训练记录<br>完成训练后点击保存</div>';
+    el.innerHTML = '<div class="empty-state">暂无训练记录<br>射箭后自动保存</div>';
     return;
   }
   el.innerHTML = sessions.map(s => `
@@ -168,7 +179,7 @@ function renderHistory() {
       </div>
       <div class="history-date">${s.date} ${s.time}</div>
       <div class="history-ends">
-        ${s.ends.map(e=>`<span class="end-tag${e.incomplete?' incomplete':''}">${e.arrows}箭${e.incomplete?' ⚡':''}</span>`).join("")}
+        ${(s.ends||[]).map(e=>`<span class="end-tag${e.incomplete?' incomplete':''}">${e.arrows}箭${e.incomplete?' ⚡':''}</span>`).join("")}
       </div>
     </div>`).join("");
 }
@@ -192,7 +203,6 @@ function render() {
   btn.disabled = state.currentEnd === 0;
   btn.textContent = `本组完成（已射 ${state.currentEnd} 箭）`;
   document.querySelector(".btn-undo").style.opacity = state.sessionArrows === 0 ? "0.4" : "1";
-  document.getElementById("btnFinish").disabled = state.sessionArrows === 0;
 }
 
 function buildChips() {
@@ -217,6 +227,7 @@ function now() { return new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",mi
 
 function addArrow() {
   const e = getEnd();
+  if (!state.sessionId) state.sessionId = Date.now();
   state.currentEnd++; state.sessionArrows++; state.totalArrows++;
   localStorage.setItem("totalArrows", state.totalArrows);
   if (e > 0 && state.currentEnd >= e) {
@@ -224,6 +235,7 @@ function addArrow() {
     state.endHistory.push({end:state.endCount,arrows:e,distance:state.distance,time:now(),incomplete:false});
     state.currentEnd = 0;
   }
+  autoSave();
   render();
 }
 
@@ -237,6 +249,7 @@ function undoArrow() {
     state.currentEnd = e > 0 ? e - 1 : 0;
     state.endHistory.pop();
   } else { state.currentEnd = Math.max(0, state.currentEnd - 1); }
+  autoSave();
   render();
 }
 
@@ -245,21 +258,28 @@ function endGroup() {
   state.endCount++;
   state.endHistory.push({end:state.endCount,arrows:state.currentEnd,distance:state.distance,time:now(),incomplete:true});
   state.currentEnd = 0;
+  autoSave();
   render();
 }
 
-function finishSession() {
-  if (state.sessionArrows === 0) return;
-  if (state.currentEnd > 0) endGroup();
-  saveSession();
-  state.sessionArrows = 0; state.currentEnd = 0; state.endCount = 0; state.endHistory = [];
-  render();
-  switchTab("history");
+function showReset() {
+  document.getElementById("resetModal").classList.add("show");
 }
-
-function resetSession() {
-  if (!confirm("确定重置本次训练？数据不会保存。")) return;
-  state.sessionArrows = 0; state.currentEnd = 0; state.endCount = 0; state.endHistory = [];
+function closeReset(e) {
+  if (!e || e.target === document.getElementById("resetModal")) {
+    document.getElementById("resetModal").classList.remove("show");
+  }
+}
+function doReset(type) {
+  if (type === 'session') {
+    state.sessionArrows = 0; state.currentEnd = 0; state.endCount = 0;
+    state.endHistory = []; state.sessionId = null;
+  } else if (type === 'total') {
+    state.totalArrows = 0;
+    localStorage.setItem("totalArrows", 0);
+    localStorage.removeItem("sessions");
+  }
+  closeReset();
   render();
 }
 
