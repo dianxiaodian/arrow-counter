@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="箭数计数器">
@@ -11,9 +11,12 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: pan-x pan-y; }
   body { min-height: 100vh; background: linear-gradient(135deg, #0f1923 0%, #1a2a3a 100%); color: #e8edf2; font-family: -apple-system, "Segoe UI", sans-serif; padding: 16px; padding-top: env(safe-area-inset-top, 16px); padding-bottom: env(safe-area-inset-bottom, 16px); }
   .container { max-width: 420px; margin: 0 auto; }
-  .header { text-align: center; margin-bottom: 20px; }
+  .header { text-align: center; margin-bottom: 20px; position: relative; }
   .header-sub { font-size: 13px; letter-spacing: 3px; color: #5a8fa8; text-transform: uppercase; margin-bottom: 4px; }
   .header-title { font-size: 24px; font-weight: 700; color: #c8dce8; }
+  .tab-bar { display: flex; gap: 8px; margin-bottom: 20px; background: #1a2a3a; border-radius: 14px; padding: 4px; }
+  .tab { flex: 1; padding: 8px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; background: transparent; color: #5a8fa8; transition: all 0.2s; }
+  .tab.active { background: #2a7fa8; color: #fff; }
   .label { font-size: 11px; color: #5a8fa8; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
   .section { margin-bottom: 16px; }
   .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -30,14 +33,28 @@
   .dot { width: 16px; height: 16px; border-radius: 50%; transition: all 0.2s; }
   .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
   .btn-undo { width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer; background: #1e2f3d; color: #7a9ab8; font-size: 20px; }
-  .btn-add { flex: 1; height: 56px; border-radius: 16px; border: none; cursor: pointer; font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #2a7fa8, #1e5f7a); color: #fff; letter-spacing: 2px; box-shadow: 0 4px 20px rgba(42,127,168,0.3); transition: background 0.15s; active: background #1e6a8a; }
+  .btn-add { flex: 1; height: 56px; border-radius: 16px; border: none; cursor: pointer; font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #2a7fa8, #1e5f7a); color: #fff; letter-spacing: 2px; box-shadow: 0 4px 20px rgba(42,127,168,0.3); }
   .btn-add:active { background: #1e6a8a; }
   .btn-reset { width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer; background: #1e2f3d; color: #7a9ab8; font-size: 13px; }
-  .btn-end { width: 100%; height: 44px; border-radius: 14px; border: 1px dashed #2a3f52; cursor: pointer; font-size: 14px; font-weight: 600; background: transparent; color: #7a9ab8; margin-bottom: 16px; transition: all 0.2s; }
+  .btn-end { width: 100%; height: 44px; border-radius: 14px; border: 1px dashed #2a3f52; cursor: pointer; font-size: 14px; font-weight: 600; background: transparent; color: #7a9ab8; margin-bottom: 16px; }
   .btn-end:disabled { color: #2a3f52; cursor: not-allowed; }
-  .history-item { display: flex; justify-content: space-between; align-items: center; background: #1a2a3a; border-radius: 10px; padding: 10px 14px; border: 1px solid #2a3f52; margin-bottom: 6px; }
+  .history-item { background: #1a2a3a; border-radius: 12px; padding: 12px 14px; border: 1px solid #2a3f52; margin-bottom: 8px; }
+  .history-item-row { display: flex; justify-content: space-between; align-items: center; }
+  .history-date { font-size: 11px; color: #5a8fa8; margin-top: 6px; }
+  .history-ends { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .end-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #1e2f3d; color: #7a9ab8; }
+  .end-tag.incomplete { color: #e8a84a; }
   input[type=number] { width: 100%; padding: 8px 12px; border-radius: 10px; border: 1px solid #2a3f52; background: #1e2f3d; color: #e8edf2; font-size: 14px; margin-top: 8px; }
   .progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .empty-state { text-align: center; padding: 40px 20px; color: #5a8fa8; font-size: 14px; }
+  .session-summary { background: #1a2a3a; border-radius: 14px; padding: 14px 16px; border: 1px solid #2a3f52; margin-bottom: 8px; }
+  .summary-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px; }
+  .summary-label { color: #5a8fa8; }
+  .summary-value { color: #c8dce8; font-weight: 600; }
+  .btn-finish { width: 100%; height: 48px; border-radius: 14px; border: none; cursor: pointer; font-size: 15px; font-weight: 700; background: linear-gradient(135deg, #27ae60, #1e8449); color: #fff; margin-bottom: 12px; }
+  .btn-finish:disabled { opacity: 0.3; cursor: not-allowed; }
+  .page { display: none; }
+  .page.active { display: block; }
 </style>
 </head>
 <body>
@@ -47,47 +64,56 @@
     <div class="header-title">训练箭数计数器</div>
   </div>
 
-  <div class="section">
-    <div class="label">射距</div>
-    <div class="chip-row" id="distanceChips"></div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('counter')">计数</button>
+    <button class="tab" onclick="switchTab('history')">历史记录</button>
   </div>
 
-  <div class="section">
-    <div class="label">每组箭数</div>
-    <div class="chip-row" id="endChips"></div>
-    <input type="number" id="customEndInput" placeholder="输入箭数" style="display:none" oninput="setCustomEnd(this.value)">
-  </div>
-
-  <div class="section">
-    <div class="progress-info">
-      <div class="label" style="margin:0">训练目标</div>
-      <div style="font-size:12px;color:#7a9ab8" id="progressText">0 / 72 箭</div>
+  <!-- 计数页 -->
+  <div id="page-counter" class="page active">
+    <div class="section">
+      <div class="label">射距</div>
+      <div class="chip-row" id="distanceChips"></div>
     </div>
-    <div class="progress-bar-bg">
-      <div class="progress-bar" id="progressBar" style="width:0%;background:linear-gradient(90deg,#2a7fa8,#5ab8d8)"></div>
+
+    <div class="section">
+      <div class="label">每组箭数</div>
+      <div class="chip-row" id="endChips"></div>
+      <input type="number" id="customEndInput" placeholder="输入箭数" style="display:none" oninput="setCustomEnd(this.value)">
     </div>
-    <div class="chip-row" style="margin-top:8px" id="goalChips"></div>
+
+    <div class="section">
+      <div class="progress-info">
+        <div class="label" style="margin:0">训练目标</div>
+        <div style="font-size:12px;color:#7a9ab8" id="progressText">0 / 72 箭</div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar" id="progressBar" style="width:0%"></div>
+      </div>
+      <div class="chip-row" style="margin-top:8px" id="goalChips"></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">本组进度</div><div class="stat-value" id="statEnd">0 / 6</div><div class="stat-unit">箭</div></div>
+      <div class="stat-card"><div class="stat-label">已完成组数</div><div class="stat-value" id="statEnds">0</div><div class="stat-unit">组</div></div>
+      <div class="stat-card"><div class="stat-label">本次训练</div><div class="stat-value" id="statSession">0</div><div class="stat-unit">箭</div></div>
+      <div class="stat-card"><div class="stat-label">累计总箭数</div><div class="stat-value" id="statTotal">0</div><div class="stat-unit">箭</div></div>
+    </div>
+
+    <div class="dots" id="dots"></div>
+
+    <div class="btn-row">
+      <button class="btn-undo" onclick="undoArrow()">↩</button>
+      <button class="btn-add" onclick="addArrow()">＋ 射箭</button>
+      <button class="btn-reset" onclick="resetSession()">重置</button>
+    </div>
+    <button class="btn-end" id="btnEnd" onclick="endGroup()" disabled>本组完成（已射 0 箭）</button>
+    <button class="btn-finish" id="btnFinish" onclick="finishSession()" disabled>完成本次训练并保存</button>
   </div>
 
-  <div class="stats-grid">
-    <div class="stat-card"><div class="stat-label">本组进度</div><div class="stat-value" id="statEnd">0 / 6</div><div class="stat-unit">箭</div></div>
-    <div class="stat-card"><div class="stat-label">已完成组数</div><div class="stat-value" id="statEnds">0</div><div class="stat-unit">组</div></div>
-    <div class="stat-card"><div class="stat-label">本次训练</div><div class="stat-value" id="statSession">0</div><div class="stat-unit">箭</div></div>
-    <div class="stat-card"><div class="stat-label">累计总箭数</div><div class="stat-value" id="statTotal">0</div><div class="stat-unit">箭</div></div>
-  </div>
-
-  <div class="dots" id="dots"></div>
-
-  <div class="btn-row">
-    <button class="btn-undo" onclick="undoArrow()">↩</button>
-    <button class="btn-add" onclick="addArrow()">＋ 射箭</button>
-    <button class="btn-reset" onclick="resetSession()">重置</button>
-  </div>
-  <button class="btn-end" id="btnEnd" onclick="endGroup()" disabled>本组完成（已射 0 箭）</button>
-
-  <div id="historySection" style="display:none">
-    <div class="label">组历史记录</div>
-    <div id="historyList"></div>
+  <!-- 历史记录页 -->
+  <div id="page-history" class="page">
+    <div id="historyContent"></div>
   </div>
 </div>
 
@@ -100,10 +126,52 @@ let state = {
   totalArrows: parseInt(localStorage.getItem("totalArrows")||"0"),
   sessionArrows: 0, currentEnd: 0, endCount: 0,
   arrowsPerEnd: 6, customEnd: 0, useCustom: false,
-  distance: "18m", goalArrows: 72, history: []
+  distance: "18m", goalArrows: 72, endHistory: []
 };
 
 function getEnd() { return state.useCustom ? (state.customEnd||0) : state.arrowsPerEnd; }
+
+function saveSession() {
+  const sessions = JSON.parse(localStorage.getItem("sessions")||"[]");
+  const session = {
+    date: new Date().toLocaleDateString("zh-CN"),
+    time: new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}),
+    totalArrows: state.sessionArrows,
+    distance: state.distance,
+    goal: state.goalArrows,
+    ends: state.endHistory.slice().reverse()
+  };
+  sessions.unshift(session);
+  if (sessions.length > 50) sessions.pop();
+  localStorage.setItem("sessions", JSON.stringify(sessions));
+}
+
+function switchTab(tab) {
+  document.querySelectorAll(".tab").forEach((t,i) => t.classList.toggle("active", (i===0&&tab==="counter")||(i===1&&tab==="history")));
+  document.getElementById("page-counter").classList.toggle("active", tab==="counter");
+  document.getElementById("page-history").classList.toggle("active", tab==="history");
+  if (tab==="history") renderHistory();
+}
+
+function renderHistory() {
+  const sessions = JSON.parse(localStorage.getItem("sessions")||"[]");
+  const el = document.getElementById("historyContent");
+  if (sessions.length === 0) {
+    el.innerHTML = '<div class="empty-state">暂无训练记录<br>完成训练后点击保存</div>';
+    return;
+  }
+  el.innerHTML = sessions.map(s => `
+    <div class="history-item">
+      <div class="history-item-row">
+        <span style="color:#5ab8d8;font-weight:700;font-size:15px">${s.totalArrows} 箭</span>
+        <span style="color:#7a9ab8;font-size:13px">${s.distance} · 目标 ${s.goal}</span>
+      </div>
+      <div class="history-date">${s.date} ${s.time}</div>
+      <div class="history-ends">
+        ${s.ends.map(e=>`<span class="end-tag${e.incomplete?' incomplete':''}">${e.arrows}箭${e.incomplete?' ⚡':''}</span>`).join("")}
+      </div>
+    </div>`).join("");
+}
 
 function render() {
   const e = getEnd();
@@ -111,46 +179,28 @@ function render() {
   document.getElementById("statEnds").textContent = state.endCount;
   document.getElementById("statSession").textContent = state.sessionArrows;
   document.getElementById("statTotal").textContent = state.totalArrows;
-  // progress
   const pct = Math.min((state.sessionArrows / state.goalArrows) * 100, 100);
   const bar = document.getElementById("progressBar");
   bar.style.width = pct + "%";
   bar.style.background = pct >= 100 ? "#2ecc71" : "linear-gradient(90deg,#2a7fa8,#5ab8d8)";
   document.getElementById("progressText").textContent = `${state.sessionArrows} / ${state.goalArrows} 箭`;
-  // dots
   const dotsEl = document.getElementById("dots");
   if (e > 0) {
     dotsEl.innerHTML = Array.from({length:e},(_,i)=>`<div class="dot" style="background:${i<state.currentEnd?'#2a7fa8':'#1e2f3d'};border:2px solid ${i<state.currentEnd?'#5ab8d8':'#2a3f52'}"></div>`).join("");
   } else { dotsEl.innerHTML = ""; }
-  // end btn
   const btn = document.getElementById("btnEnd");
   btn.disabled = state.currentEnd === 0;
   btn.textContent = `本组完成（已射 ${state.currentEnd} 箭）`;
-  // undo btn
   document.querySelector(".btn-undo").style.opacity = state.sessionArrows === 0 ? "0.4" : "1";
-  // history
-  const hist = document.getElementById("historySection");
-  const list = document.getElementById("historyList");
-  if (state.history.length > 0) {
-    hist.style.display = "block";
-    list.innerHTML = state.history.map(h=>`
-      <div class="history-item">
-        <span style="color:#5ab8d8;font-weight:600;font-size:13px">第 ${h.end} 组</span>
-        <span style="color:${h.incomplete?'#e8a84a':'#c8dce8'};font-size:13px">${h.arrows} 箭 · ${h.distance}${h.incomplete?' ⚡':''}</span>
-        <span style="color:#5a8fa8;font-size:12px">${h.time}</span>
-      </div>`).join("");
-  } else { hist.style.display = "none"; }
+  document.getElementById("btnFinish").disabled = state.sessionArrows === 0;
 }
 
 function buildChips() {
-  // distance
   document.getElementById("distanceChips").innerHTML = DISTANCES.map(d=>
     `<button class="chip${d===state.distance?' active':''}" onclick="setDistance('${d}')">${d}</button>`).join("");
-  // ends
   document.getElementById("endChips").innerHTML = ENDS.map(p=>
     `<button class="chip${(!state.useCustom&&p.v===state.arrowsPerEnd)||(state.useCustom&&p.v===null)?' active':''}" onclick="setEnd(${p.v})">${p.label}</button>`).join("");
   document.getElementById("customEndInput").style.display = state.useCustom ? "block" : "none";
-  // goals
   document.getElementById("goalChips").innerHTML = GOALS.map(g=>
     `<button class="chip${g===state.goalArrows?' active':''}" onclick="setGoal(${g})">${g}</button>`).join("");
 }
@@ -163,19 +213,15 @@ function setEnd(v) {
 }
 function setCustomEnd(v) { state.customEnd = parseInt(v)||0; render(); }
 function setGoal(g) { state.goalArrows = g; buildChips(); render(); }
-
 function now() { return new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}); }
 
 function addArrow() {
   const e = getEnd();
-  state.currentEnd++;
-  state.sessionArrows++;
-  state.totalArrows++;
+  state.currentEnd++; state.sessionArrows++; state.totalArrows++;
   localStorage.setItem("totalArrows", state.totalArrows);
   if (e > 0 && state.currentEnd >= e) {
     state.endCount++;
-    state.history.unshift({end:state.endCount,arrows:e,distance:state.distance,time:now(),incomplete:false});
-    if (state.history.length > 10) state.history.pop();
+    state.endHistory.push({end:state.endCount,arrows:e,distance:state.distance,time:now(),incomplete:false});
     state.currentEnd = 0;
   }
   render();
@@ -184,30 +230,36 @@ function addArrow() {
 function undoArrow() {
   if (state.sessionArrows === 0) return;
   const e = getEnd();
-  state.sessionArrows--;
-  state.totalArrows--;
+  state.sessionArrows--; state.totalArrows--;
   localStorage.setItem("totalArrows", state.totalArrows);
   if (state.currentEnd === 0 && state.endCount > 0) {
     state.endCount--;
     state.currentEnd = e > 0 ? e - 1 : 0;
-    state.history.shift();
-  } else {
-    state.currentEnd = Math.max(0, state.currentEnd - 1);
-  }
+    state.endHistory.pop();
+  } else { state.currentEnd = Math.max(0, state.currentEnd - 1); }
   render();
 }
 
 function endGroup() {
   if (state.currentEnd === 0) return;
   state.endCount++;
-  state.history.unshift({end:state.endCount,arrows:state.currentEnd,distance:state.distance,time:now(),incomplete:true});
-  if (state.history.length > 10) state.history.pop();
+  state.endHistory.push({end:state.endCount,arrows:state.currentEnd,distance:state.distance,time:now(),incomplete:true});
   state.currentEnd = 0;
   render();
 }
 
+function finishSession() {
+  if (state.sessionArrows === 0) return;
+  if (state.currentEnd > 0) endGroup();
+  saveSession();
+  state.sessionArrows = 0; state.currentEnd = 0; state.endCount = 0; state.endHistory = [];
+  render();
+  switchTab("history");
+}
+
 function resetSession() {
-  state.sessionArrows = 0; state.currentEnd = 0; state.endCount = 0; state.history = [];
+  if (!confirm("确定重置本次训练？数据不会保存。")) return;
+  state.sessionArrows = 0; state.currentEnd = 0; state.endCount = 0; state.endHistory = [];
   render();
 }
 
