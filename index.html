@@ -49,7 +49,6 @@
   .empty-state { text-align: center; padding: 40px 20px; color: #5a8fa8; font-size: 14px; }
   .page { display: none; }
   .page.active { display: block; }
-  /* Modal */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: flex-end; justify-content: center; }
   .modal-overlay.show { display: flex; }
   .modal { background: #1a2a3a; border-radius: 20px 20px 0 0; padding: 20px 16px calc(env(safe-area-inset-bottom, 16px) + 16px); width: 100%; max-width: 420px; }
@@ -127,16 +126,47 @@ const DISTANCES = ["10m","18m"];
 const GOALS = [36,72,90,144];
 const ENDS = [{label:"6箭/组",v:6},{label:"3箭/组",v:3},{label:"自定义",v:null}];
 
-let state = {
-  totalArrows: parseInt(localStorage.getItem("totalArrows")||"0"),
+// ── 默认 state ──────────────────────────────────────────────
+const DEFAULT_STATE = {
+  totalArrows: 0,
   sessionArrows: 0, currentEnd: 0, endCount: 0,
   arrowsPerEnd: 6, customEnd: 0, useCustom: false,
-  distance: "18m", goalArrows: 72, endHistory: []
+  distance: "18m", goalArrows: 72, endHistory: [],
+  sessionId: null
 };
+
+// ── 从 localStorage 恢复完整 state（含进行中的训练）──────────
+function loadState() {
+  const saved = localStorage.getItem("currentState");
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      return Object.assign({}, DEFAULT_STATE, parsed);
+    } catch(e) {}
+  }
+  // 兼容旧版本：只存了 totalArrows
+  return Object.assign({}, DEFAULT_STATE, {
+    totalArrows: parseInt(localStorage.getItem("totalArrows") || "0")
+  });
+}
+
+// ── 将完整 state 持久化 ──────────────────────────────────────
+function saveState() {
+  localStorage.setItem("currentState", JSON.stringify(state));
+  // 保持旧 key 兼容
+  localStorage.setItem("totalArrows", state.totalArrows);
+}
+
+let state = loadState();
 
 function getEnd() { return state.useCustom ? (state.customEnd||0) : state.arrowsPerEnd; }
 
 function autoSave() {
+  // 保存进行中的 state（防止进程被杀）
+  saveState();
+
+  // 同时更新历史记录列表
+  if (state.sessionArrows === 0) return;
   const sessions = JSON.parse(localStorage.getItem("sessions")||"[]");
   const session = {
     date: new Date().toLocaleDateString("zh-CN"),
@@ -144,14 +174,13 @@ function autoSave() {
     totalArrows: state.sessionArrows,
     distance: state.distance,
     goal: state.goalArrows,
-    ends: state.endHistory.slice()
+    ends: state.endHistory.slice(),
+    sessionId: state.sessionId
   };
-  // 当天同一次训练就更新第一条，否则新增
-  if (sessions.length > 0 && sessions[0].date === session.date && sessions[0].sessionId === state.sessionId) {
-    sessions[0] = { ...session, sessionId: state.sessionId };
+  if (sessions.length > 0 && sessions[0].sessionId === state.sessionId) {
+    sessions[0] = session;
   } else {
-    if (!state.sessionId) state.sessionId = Date.now();
-    sessions.unshift({ ...session, sessionId: state.sessionId });
+    sessions.unshift(session);
   }
   if (sessions.length > 50) sessions.pop();
   localStorage.setItem("sessions", JSON.stringify(sessions));
@@ -211,25 +240,27 @@ function buildChips() {
   document.getElementById("endChips").innerHTML = ENDS.map(p=>
     `<button class="chip${(!state.useCustom&&p.v===state.arrowsPerEnd)||(state.useCustom&&p.v===null)?' active':''}" onclick="setEnd(${p.v})">${p.label}</button>`).join("");
   document.getElementById("customEndInput").style.display = state.useCustom ? "block" : "none";
+  if (state.useCustom && state.customEnd) {
+    document.getElementById("customEndInput").value = state.customEnd;
+  }
   document.getElementById("goalChips").innerHTML = GOALS.map(g=>
     `<button class="chip${g===state.goalArrows?' active':''}" onclick="setGoal(${g})">${g}</button>`).join("");
 }
 
-function setDistance(d) { state.distance = d; buildChips(); render(); }
+function setDistance(d) { state.distance = d; saveState(); buildChips(); render(); }
 function setEnd(v) {
   if (v === null) { state.useCustom = true; }
   else { state.useCustom = false; state.arrowsPerEnd = v; }
-  buildChips(); render();
+  saveState(); buildChips(); render();
 }
-function setCustomEnd(v) { state.customEnd = parseInt(v)||0; render(); }
-function setGoal(g) { state.goalArrows = g; buildChips(); render(); }
+function setCustomEnd(v) { state.customEnd = parseInt(v)||0; saveState(); render(); }
+function setGoal(g) { state.goalArrows = g; saveState(); buildChips(); render(); }
 function now() { return new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}); }
 
 function addArrow() {
   const e = getEnd();
   if (!state.sessionId) state.sessionId = Date.now();
   state.currentEnd++; state.sessionArrows++; state.totalArrows++;
-  localStorage.setItem("totalArrows", state.totalArrows);
   if (e > 0 && state.currentEnd >= e) {
     state.endCount++;
     state.endHistory.push({end:state.endCount,arrows:e,distance:state.distance,time:now(),incomplete:false});
@@ -243,7 +274,6 @@ function undoArrow() {
   if (state.sessionArrows === 0) return;
   const e = getEnd();
   state.sessionArrows--; state.totalArrows--;
-  localStorage.setItem("totalArrows", state.totalArrows);
   if (state.currentEnd === 0 && state.endCount > 0) {
     state.endCount--;
     state.currentEnd = e > 0 ? e - 1 : 0;
@@ -274,10 +304,12 @@ function doReset(type) {
   if (type === 'session') {
     state.sessionArrows = 0; state.currentEnd = 0; state.endCount = 0;
     state.endHistory = []; state.sessionId = null;
+    saveState();
   } else if (type === 'total') {
-    state.totalArrows = 0;
-    localStorage.setItem("totalArrows", 0);
+    state.totalArrows = 0; state.sessionArrows = 0; state.currentEnd = 0;
+    state.endCount = 0; state.endHistory = []; state.sessionId = null;
     localStorage.removeItem("sessions");
+    saveState();
   }
   closeReset();
   render();
