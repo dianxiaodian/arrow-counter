@@ -24,8 +24,12 @@
   .chip.active { background: #2a7fa8; color: #fff; }
   .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
   .stat-card { background: #1a2a3a; border-radius: 14px; padding: 14px 16px; border: 1px solid #2a3f52; }
+  .stat-card.wide { grid-column: 1 / -1; }
   .stat-label { font-size: 11px; color: #5a8fa8; letter-spacing: 1px; margin-bottom: 6px; }
   .stat-value { font-size: 28px; font-weight: 700; color: #c8dce8; line-height: 1; }
+  .stat-value-row { display: flex; align-items: baseline; gap: 10px; }
+  .stat-divider { font-size: 18px; color: #2a3f52; font-weight: 300; }
+  .stat-ends { font-size: 18px; font-weight: 600; color: #5a8fa8; }
   .stat-unit { font-size: 11px; color: #5a8fa8; margin-top: 2px; }
   .progress-bar-bg { height: 6px; background: #1e2f3d; border-radius: 4px; overflow: hidden; }
   .progress-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
@@ -55,7 +59,6 @@
   .modal-title { font-size: 13px; color: #5a8fa8; text-align: center; margin-bottom: 16px; letter-spacing: 1px; }
   .modal-btn { width: 100%; height: 52px; border-radius: 14px; border: none; cursor: pointer; font-size: 16px; font-weight: 600; margin-bottom: 10px; }
   .modal-btn-danger { background: #2d1a1a; color: #e74c3c; }
-  .modal-btn-warn { background: #2a2a1a; color: #e8a84a; }
   .modal-btn-cancel { background: #1e2f3d; color: #7a9ab8; margin-bottom: 0; }
 </style>
 </head>
@@ -91,12 +94,26 @@
       </div>
       <div class="chip-row" style="margin-top:8px" id="goalChips"></div>
     </div>
+
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-label">本组进度</div><div class="stat-value" id="statEnd">0 / 6</div><div class="stat-unit">箭</div></div>
-      <div class="stat-card"><div class="stat-label">已完成组数</div><div class="stat-value" id="statEnds">0</div><div class="stat-unit">组</div></div>
-      <div class="stat-card"><div class="stat-label">本次训练</div><div class="stat-value" id="statSession">0</div><div class="stat-unit">箭</div></div>
-      <div class="stat-card"><div class="stat-label">累计总箭数</div><div class="stat-value" id="statTotal">0</div><div class="stat-unit">箭</div></div>
+      <!-- 本组进度 + 已完成组数 -->
+      <div class="stat-card">
+        <div class="stat-label">本组进度 · 完成组数</div>
+        <div class="stat-value-row">
+          <div class="stat-value" id="statEnd">0 / 6</div>
+          <div class="stat-divider">—</div>
+          <div class="stat-ends" id="statEnds">0</div>
+        </div>
+        <div class="stat-unit">箭 · 组</div>
+      </div>
+      <!-- 本次训练（去掉"累计总数"，合并为唯一计数器） -->
+      <div class="stat-card">
+        <div class="stat-label">本次训练</div>
+        <div class="stat-value" id="statSession">0</div>
+        <div class="stat-unit">箭</div>
+      </div>
     </div>
+
     <div class="dots" id="dots"></div>
     <div class="btn-row">
       <button class="btn-undo" onclick="undoArrow()">↩</button>
@@ -114,47 +131,34 @@
 <!-- 重置弹窗 -->
 <div class="modal-overlay" id="resetModal" onclick="closeReset(event)">
   <div class="modal">
-    <div class="modal-title">选择重置范围</div>
-    <button class="modal-btn modal-btn-danger" onclick="doReset('session')">重置本次训练</button>
-    <button class="modal-btn modal-btn-warn" onclick="doReset('total')">重置累计总数</button>
+    <div class="modal-title">重置本次训练？</div>
+    <button class="modal-btn modal-btn-danger" onclick="doReset()">确认重置</button>
     <button class="modal-btn modal-btn-cancel" onclick="closeReset()">取消</button>
   </div>
 </div>
 
 <script>
 const DISTANCES = ["10m","18m"];
-const GOALS = [36,72,90,144];
+const GOALS = [36,72,108,144];
 const ENDS = [{label:"6箭/组",v:6},{label:"3箭/组",v:3},{label:"自定义",v:null}];
 
-// ── 默认 state ──────────────────────────────────────────────
 const DEFAULT_STATE = {
-  totalArrows: 0,
   sessionArrows: 0, currentEnd: 0, endCount: 0,
   arrowsPerEnd: 6, customEnd: 0, useCustom: false,
   distance: "18m", goalArrows: 72, endHistory: [],
   sessionId: null
 };
 
-// ── 从 localStorage 恢复完整 state（含进行中的训练）──────────
 function loadState() {
   const saved = localStorage.getItem("currentState");
   if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      return Object.assign({}, DEFAULT_STATE, parsed);
-    } catch(e) {}
+    try { return Object.assign({}, DEFAULT_STATE, JSON.parse(saved)); } catch(e) {}
   }
-  // 兼容旧版本：只存了 totalArrows
-  return Object.assign({}, DEFAULT_STATE, {
-    totalArrows: parseInt(localStorage.getItem("totalArrows") || "0")
-  });
+  return Object.assign({}, DEFAULT_STATE);
 }
 
-// ── 将完整 state 持久化 ──────────────────────────────────────
 function saveState() {
   localStorage.setItem("currentState", JSON.stringify(state));
-  // 保持旧 key 兼容
-  localStorage.setItem("totalArrows", state.totalArrows);
 }
 
 let state = loadState();
@@ -162,10 +166,7 @@ let state = loadState();
 function getEnd() { return state.useCustom ? (state.customEnd||0) : state.arrowsPerEnd; }
 
 function autoSave() {
-  // 保存进行中的 state（防止进程被杀）
   saveState();
-
-  // 同时更新历史记录列表
   if (state.sessionArrows === 0) return;
   const sessions = JSON.parse(localStorage.getItem("sessions")||"[]");
   const session = {
@@ -218,7 +219,6 @@ function render() {
   document.getElementById("statEnd").textContent = e > 0 ? `${state.currentEnd} / ${e}` : state.currentEnd;
   document.getElementById("statEnds").textContent = state.endCount;
   document.getElementById("statSession").textContent = state.sessionArrows;
-  document.getElementById("statTotal").textContent = state.totalArrows;
   const pct = Math.min((state.sessionArrows / state.goalArrows) * 100, 100);
   const bar = document.getElementById("progressBar");
   bar.style.width = pct + "%";
@@ -240,9 +240,7 @@ function buildChips() {
   document.getElementById("endChips").innerHTML = ENDS.map(p=>
     `<button class="chip${(!state.useCustom&&p.v===state.arrowsPerEnd)||(state.useCustom&&p.v===null)?' active':''}" onclick="setEnd(${p.v})">${p.label}</button>`).join("");
   document.getElementById("customEndInput").style.display = state.useCustom ? "block" : "none";
-  if (state.useCustom && state.customEnd) {
-    document.getElementById("customEndInput").value = state.customEnd;
-  }
+  if (state.useCustom && state.customEnd) document.getElementById("customEndInput").value = state.customEnd;
   document.getElementById("goalChips").innerHTML = GOALS.map(g=>
     `<button class="chip${g===state.goalArrows?' active':''}" onclick="setGoal(${g})">${g}</button>`).join("");
 }
@@ -260,27 +258,25 @@ function now() { return new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",mi
 function addArrow() {
   const e = getEnd();
   if (!state.sessionId) state.sessionId = Date.now();
-  state.currentEnd++; state.sessionArrows++; state.totalArrows++;
+  state.currentEnd++; state.sessionArrows++;
   if (e > 0 && state.currentEnd >= e) {
     state.endCount++;
     state.endHistory.push({end:state.endCount,arrows:e,distance:state.distance,time:now(),incomplete:false});
     state.currentEnd = 0;
   }
-  autoSave();
-  render();
+  autoSave(); render();
 }
 
 function undoArrow() {
   if (state.sessionArrows === 0) return;
   const e = getEnd();
-  state.sessionArrows--; state.totalArrows--;
+  state.sessionArrows--;
   if (state.currentEnd === 0 && state.endCount > 0) {
     state.endCount--;
     state.currentEnd = e > 0 ? e - 1 : 0;
     state.endHistory.pop();
   } else { state.currentEnd = Math.max(0, state.currentEnd - 1); }
-  autoSave();
-  render();
+  autoSave(); render();
 }
 
 function endGroup() {
@@ -288,29 +284,17 @@ function endGroup() {
   state.endCount++;
   state.endHistory.push({end:state.endCount,arrows:state.currentEnd,distance:state.distance,time:now(),incomplete:true});
   state.currentEnd = 0;
-  autoSave();
-  render();
+  autoSave(); render();
 }
 
-function showReset() {
-  document.getElementById("resetModal").classList.add("show");
-}
+function showReset() { document.getElementById("resetModal").classList.add("show"); }
 function closeReset(e) {
-  if (!e || e.target === document.getElementById("resetModal")) {
+  if (!e || e.target === document.getElementById("resetModal"))
     document.getElementById("resetModal").classList.remove("show");
-  }
 }
-function doReset(type) {
-  if (type === 'session') {
-    state.sessionArrows = 0; state.currentEnd = 0; state.endCount = 0;
-    state.endHistory = []; state.sessionId = null;
-    saveState();
-  } else if (type === 'total') {
-    state.totalArrows = 0; state.sessionArrows = 0; state.currentEnd = 0;
-    state.endCount = 0; state.endHistory = []; state.sessionId = null;
-    localStorage.removeItem("sessions");
-    saveState();
-  }
+function doReset() {
+  Object.assign(state, DEFAULT_STATE);
+  saveState();
   closeReset();
   render();
 }
