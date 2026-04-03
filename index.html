@@ -22,24 +22,39 @@
   .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
   .chip { padding: 5px 12px; border-radius: 20px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: #1e2f3d; color: #7a9ab8; transition: all 0.2s; }
   .chip.active { background: #2a7fa8; color: #fff; }
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
   .stat-card { background: #1a2a3a; border-radius: 14px; padding: 14px 16px; border: 1px solid #2a3f52; }
-  .stat-card.wide { grid-column: 1 / -1; }
   .stat-label { font-size: 11px; color: #5a8fa8; letter-spacing: 1px; margin-bottom: 6px; }
   .stat-value { font-size: 28px; font-weight: 700; color: #c8dce8; line-height: 1; }
-  .stat-value-row { display: flex; align-items: baseline; gap: 10px; }
+  .stat-value-row { display: flex; align-items: baseline; gap: 8px; }
   .stat-divider { font-size: 18px; color: #2a3f52; font-weight: 300; }
   .stat-ends { font-size: 28px; font-weight: 700; color: #5a8fa8; }
   .stat-unit { font-size: 11px; color: #5a8fa8; margin-top: 2px; }
+  .stat-score { font-size: 28px; font-weight: 700; color: #e8c84a; line-height: 1; }
   .progress-bar-bg { height: 6px; background: #1e2f3d; border-radius: 4px; overflow: hidden; }
   .progress-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
-  .dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
   .dot { width: 16px; height: 16px; border-radius: 50%; transition: all 0.2s; }
+  /* Score dots row */
+  .score-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; min-height: 22px; }
+  .score-dot { font-size: 11px; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
   .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
   .btn-undo { width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer; background: #1e2f3d; color: #7a9ab8; font-size: 20px; }
   .btn-add { flex: 1; height: 56px; border-radius: 16px; border: none; cursor: pointer; font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #2a7fa8, #1e5f7a); color: #fff; letter-spacing: 2px; box-shadow: 0 4px 20px rgba(42,127,168,0.3); }
-  .btn-add:active { background: #1e6a8a; }
+  .btn-add:active { transform: scale(0.98); }
   .btn-reset { width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer; background: #1e2f3d; color: #7a9ab8; font-size: 13px; }
+  /* Score pad */
+  .score-pad { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
+  .score-btn { flex: 0 0 calc((100% - 50px) / 6); height: 44px; border-radius: 12px; border: none; cursor: pointer; font-size: 14px; font-weight: 700; background: #1e2f3d; color: #c8dce8; transition: all 0.15s; }
+  .score-btn:active { transform: scale(0.93); }
+  .score-btn.sx { background: #1e3a2a; color: #2ecc71; }
+  .score-btn.s10 { background: #1e3a2a; color: #5ab8d8; }
+  .score-btn.s9 { background: #1e2f3a; color: #7ab8d8; }
+  .score-btn.s8 { background: #1e2a3a; color: #9ab8d8; }
+  .score-btn.s7 { background: #1e253a; color: #aab8d8; }
+  .score-btn.s6 { background: #1e203a; color: #bab8d8; }
+  .score-btn.slow { background: #1e1e2a; color: #7a8898; }
+  .score-btn.s0 { background: #2a1e1e; color: #e74c3c; }
   .btn-end { width: 100%; height: 44px; border-radius: 14px; border: 1px dashed #2a3f52; cursor: pointer; font-size: 14px; font-weight: 600; background: transparent; color: #7a9ab8; margin-bottom: 16px; }
   .btn-end:disabled { color: #2a3f52; cursor: not-allowed; }
   .history-item { background: #1a2a3a; border-radius: 12px; padding: 12px 14px; border: 1px solid #2a3f52; margin-bottom: 8px; }
@@ -96,7 +111,6 @@
     </div>
 
     <div class="stats-grid">
-      <!-- 本组进度 + 已完成组数 -->
       <div class="stat-card">
         <div class="stat-label">本组进度 · 完成组数</div>
         <div class="stat-value-row">
@@ -106,20 +120,31 @@
         </div>
         <div class="stat-unit">箭 · 组</div>
       </div>
-      <!-- 本次训练（去掉"累计总数"，合并为唯一计数器） -->
       <div class="stat-card">
         <div class="stat-label">本次训练</div>
         <div class="stat-value" id="statSession">0</div>
         <div class="stat-unit">箭</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-label">本组分数</div>
+        <div class="stat-score" id="statScore">—</div>
+        <div class="stat-unit">环</div>
+      </div>
     </div>
 
+    <!-- 当组已射箭的环数小圆点 -->
     <div class="dots" id="dots"></div>
+    <div class="score-dots" id="scoreDots"></div>
+
     <div class="btn-row">
       <button class="btn-undo" onclick="undoArrow()">↩</button>
-      <button class="btn-add" onclick="addArrow()">＋ 射箭</button>
+      <button class="btn-add" onclick="addArrow(null)">＋ 射箭</button>
       <button class="btn-reset" onclick="showReset()">重置</button>
     </div>
+
+    <!-- 环数键盘 -->
+    <div class="score-pad" id="scorePad"></div>
+
     <button class="btn-end" id="btnEnd" onclick="endGroup()" disabled>本组完成（已射 0 箭）</button>
   </div>
 
@@ -128,7 +153,6 @@
   </div>
 </div>
 
-<!-- 重置弹窗 -->
 <div class="modal-overlay" id="resetModal" onclick="closeReset(event)">
   <div class="modal">
     <div class="modal-title">重置本次训练？</div>
@@ -142,11 +166,20 @@ const DISTANCES = ["10m","18m"];
 const GOALS = [36,72,108,144];
 const ENDS = [{label:"3箭/组",v:3},{label:"6箭/组",v:6},{label:"自定义",v:null}];
 
+// X=10分, 其余按面值
+const SCORE_LABELS = ["X","10","9","8","7","6","5","4","3","2","1","0"];
+const SCORE_VALUES = { "X":10,"10":10,"9":9,"8":8,"7":7,"6":6,"5":5,"4":4,"3":3,"2":2,"1":1,"0":0 };
+const SCORE_CLASSES = { "X":"sx","10":"s10","9":"s9","8":"s8","7":"s7","6":"s6","5":"slow","4":"slow","3":"slow","2":"slow","1":"slow","0":"s0" };
+// 环数对应圆点颜色（按国际靶色）
+const DOT_COLORS = { "X":"#2ecc71","10":"#5ab8d8","9":"#5ab8d8","8":"#e74c3c","7":"#e74c3c","6":"#3498db","5":"#3498db","4":"#1e1e1e","3":"#1e1e1e","2":"#ffffff","1":"#ffffff","0":"#888" };
+
 const DEFAULT_STATE = {
   sessionArrows: 0, currentEnd: 0, endCount: 0,
   arrowsPerEnd: 6, customEnd: 0, useCustom: false,
   distance: "18m", goalArrows: 72, endHistory: [],
-  sessionId: null
+  sessionId: null,
+  currentEndScores: [],   // 当组每箭环数标签 ["X","9","8"...]
+  currentEndScore: 0      // 当组分数合计
 };
 
 function loadState() {
@@ -156,12 +189,12 @@ function loadState() {
   }
   return Object.assign({}, DEFAULT_STATE);
 }
-
-function saveState() {
-  localStorage.setItem("currentState", JSON.stringify(state));
-}
+function saveState() { localStorage.setItem("currentState", JSON.stringify(state)); }
 
 let state = loadState();
+// 保证旧数据兼容
+if (!state.currentEndScores) state.currentEndScores = [];
+if (state.currentEndScore == null) state.currentEndScore = 0;
 
 function getEnd() { return state.useCustom ? (state.customEnd||0) : state.arrowsPerEnd; }
 
@@ -209,7 +242,11 @@ function renderHistory() {
       </div>
       <div class="history-date">${s.date} ${s.time}</div>
       <div class="history-ends">
-        ${(s.ends||[]).map(e=>`<span class="end-tag${e.incomplete?' incomplete':''}">${e.arrows}箭${e.incomplete?' ⚡':''}</span>`).join("")}
+        ${(s.ends||[]).map(e=>{
+          const scoreStr = e.score != null ? ` · ${e.score}分` : "";
+          const scoresStr = e.scores ? e.scores.join(" ") : "";
+          return `<span class="end-tag${e.incomplete?' incomplete':''}" title="${scoresStr}">${e.arrows}箭${scoreStr}${e.incomplete?' ⚡':''}</span>`;
+        }).join("")}
       </div>
     </div>`).join("");
 }
@@ -219,19 +256,46 @@ function render() {
   document.getElementById("statEnd").textContent = e > 0 ? `${state.currentEnd} / ${e}` : state.currentEnd;
   document.getElementById("statEnds").textContent = state.endCount;
   document.getElementById("statSession").textContent = state.sessionArrows;
+
+  // 本组分数
+  const hasScores = state.currentEndScores.length > 0;
+  document.getElementById("statScore").textContent = hasScores ? state.currentEndScore : "—";
+
+  // 进度条
   const pct = Math.min((state.sessionArrows / state.goalArrows) * 100, 100);
   const bar = document.getElementById("progressBar");
   bar.style.width = pct + "%";
   bar.style.background = pct >= 100 ? "#2ecc71" : "linear-gradient(90deg,#2a7fa8,#5ab8d8)";
   document.getElementById("progressText").textContent = `${state.sessionArrows} / ${state.goalArrows} 箭`;
+
+  // 进度圆点（箭数）
   const dotsEl = document.getElementById("dots");
   if (e > 0) {
     dotsEl.innerHTML = Array.from({length:e},(_,i)=>`<div class="dot" style="background:${i<state.currentEnd?'#2a7fa8':'#1e2f3d'};border:2px solid ${i<state.currentEnd?'#5ab8d8':'#2a3f52'}"></div>`).join("");
   } else { dotsEl.innerHTML = ""; }
+
+  // 环数小圆点（已记录环数的箭）
+  const scoreDotsEl = document.getElementById("scoreDots");
+  if (state.currentEndScores.length > 0) {
+    scoreDotsEl.innerHTML = state.currentEndScores.map(s => {
+      const col = DOT_COLORS[s] || "#7a9ab8";
+      const textCol = (s==="2"||s==="1") ? "#333" : "#fff";
+      return `<div class="score-dot" style="background:${col};color:${textCol}">${s}</div>`;
+    }).join("");
+  } else {
+    scoreDotsEl.innerHTML = "";
+  }
+
   const btn = document.getElementById("btnEnd");
   btn.disabled = state.currentEnd === 0;
   btn.textContent = `本组完成（已射 ${state.currentEnd} 箭）`;
   document.querySelector(".btn-undo").style.opacity = state.sessionArrows === 0 ? "0.4" : "1";
+}
+
+function buildScorePad() {
+  document.getElementById("scorePad").innerHTML = SCORE_LABELS.map(lbl =>
+    `<button class="score-btn ${SCORE_CLASSES[lbl]}" onclick="addArrow('${lbl}')">${lbl}</button>`
+  ).join("");
 }
 
 function buildChips() {
@@ -255,14 +319,29 @@ function setCustomEnd(v) { state.customEnd = parseInt(v)||0; saveState(); render
 function setGoal(g) { state.goalArrows = g; saveState(); buildChips(); render(); }
 function now() { return new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"}); }
 
-function addArrow() {
+// scoreLabel: "X","10","9"... 或 null（不记环数）
+function addArrow(scoreLabel) {
   const e = getEnd();
   if (!state.sessionId) state.sessionId = Date.now();
-  state.currentEnd++; state.sessionArrows++;
+  state.currentEnd++;
+  state.sessionArrows++;
+
+  if (scoreLabel !== null) {
+    state.currentEndScores.push(scoreLabel);
+    state.currentEndScore += SCORE_VALUES[scoreLabel];
+  }
+
   if (e > 0 && state.currentEnd >= e) {
     state.endCount++;
-    state.endHistory.push({end:state.endCount,arrows:e,distance:state.distance,time:now(),incomplete:false});
+    state.endHistory.push({
+      end: state.endCount, arrows: e,
+      distance: state.distance, time: now(), incomplete: false,
+      score: state.currentEndScores.length > 0 ? state.currentEndScore : null,
+      scores: state.currentEndScores.slice()
+    });
     state.currentEnd = 0;
+    state.currentEndScores = [];
+    state.currentEndScore = 0;
   }
   autoSave(); render();
 }
@@ -271,19 +350,44 @@ function undoArrow() {
   if (state.sessionArrows === 0) return;
   const e = getEnd();
   state.sessionArrows--;
+
+  // 撤销环数
   if (state.currentEnd === 0 && state.endCount > 0) {
+    // 撤销到上一组
     state.endCount--;
+    const prev = state.endHistory.pop();
     state.currentEnd = e > 0 ? e - 1 : 0;
-    state.endHistory.pop();
-  } else { state.currentEnd = Math.max(0, state.currentEnd - 1); }
+    // 恢复上一组的环数状态（去掉最后一箭）
+    if (prev && prev.scores && prev.scores.length > 0) {
+      const scores = prev.scores.slice(0, -1);
+      state.currentEndScores = scores;
+      state.currentEndScore = scores.reduce((a,s)=>a+SCORE_VALUES[s],0);
+    } else {
+      state.currentEndScores = [];
+      state.currentEndScore = 0;
+    }
+  } else {
+    state.currentEnd = Math.max(0, state.currentEnd - 1);
+    if (state.currentEndScores.length > 0) {
+      const removed = state.currentEndScores.pop();
+      state.currentEndScore -= SCORE_VALUES[removed];
+    }
+  }
   autoSave(); render();
 }
 
 function endGroup() {
   if (state.currentEnd === 0) return;
   state.endCount++;
-  state.endHistory.push({end:state.endCount,arrows:state.currentEnd,distance:state.distance,time:now(),incomplete:true});
+  state.endHistory.push({
+    end: state.endCount, arrows: state.currentEnd,
+    distance: state.distance, time: now(), incomplete: true,
+    score: state.currentEndScores.length > 0 ? state.currentEndScore : null,
+    scores: state.currentEndScores.slice()
+  });
   state.currentEnd = 0;
+  state.currentEndScores = [];
+  state.currentEndScore = 0;
   autoSave(); render();
 }
 
@@ -299,7 +403,7 @@ function doReset() {
   render();
 }
 
-buildChips(); render();
+buildChips(); buildScorePad(); render();
 </script>
 </body>
 </html>
