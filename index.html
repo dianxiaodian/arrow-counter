@@ -26,17 +26,16 @@
   .stat-card { background: #1a2a3a; border-radius: 14px; padding: 14px 16px; border: 1px solid #2a3f52; }
   .stat-label { font-size: 11px; color: #5a8fa8; letter-spacing: 1px; margin-bottom: 6px; }
   .stat-value { font-size: 28px; font-weight: 700; color: #c8dce8; line-height: 1; }
-  .stat-value-row { display: flex; align-items: baseline; gap: 8px; }
+  .stat-value-row { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; flex-wrap: nowrap; }
   .stat-divider { font-size: 18px; color: #2a3f52; font-weight: 300; }
   .stat-ends { font-size: 28px; font-weight: 700; color: #5a8fa8; }
   .stat-unit { font-size: 11px; color: #5a8fa8; margin-top: 2px; }
   .stat-score { font-size: 28px; font-weight: 700; color: #e8c84a; line-height: 1; }
   .progress-bar-bg { height: 6px; background: #1e2f3d; border-radius: 4px; overflow: hidden; }
   .progress-bar { height: 100%; border-radius: 4px; transition: width 0.4s; }
-  .dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; min-height: 16px; }
+  .score-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; min-height: 0; }
   .dot { width: 16px; height: 16px; border-radius: 50%; transition: all 0.2s; }
-  /* Score dots row */
-  .score-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; min-height: 22px; }
   .score-dot { font-size: 11px; font-weight: 700; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
   .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
   .btn-undo { width: 56px; height: 56px; border-radius: 16px; border: none; cursor: pointer; background: #1e2f3d; color: #7a9ab8; font-size: 20px; }
