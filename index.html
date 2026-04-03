@@ -46,14 +46,14 @@
   .score-pad { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
   .score-btn { flex: 0 0 calc((100% - 50px) / 6); height: 44px; border-radius: 12px; border: none; cursor: pointer; font-size: 14px; font-weight: 700; background: #1e2f3d; color: #c8dce8; transition: all 0.15s; }
   .score-btn:active { transform: scale(0.93); }
-  .score-btn.sx { background: #1e3a2a; color: #2ecc71; }
-  .score-btn.s10 { background: #1e3a2a; color: #5ab8d8; }
-  .score-btn.s9 { background: #1e2f3a; color: #7ab8d8; }
-  .score-btn.s8 { background: #1e2a3a; color: #9ab8d8; }
-  .score-btn.s7 { background: #1e253a; color: #aab8d8; }
-  .score-btn.s6 { background: #1e203a; color: #bab8d8; }
-  .score-btn.slow { background: #1e1e2a; color: #7a8898; }
-  .score-btn.s0 { background: #2a1e1e; color: #e74c3c; }
+  .score-btn.sx  { background: #7a6000; color: #f1c40f; }
+  .score-btn.s10 { background: #7a6000; color: #f1c40f; }
+  .score-btn.s9  { background: #6a5400; color: #f1c40f; }
+  .score-btn.s8  { background: #5a4800; color: #f1c40f; }
+  .score-btn.s7  { background: #7a1a1a; color: #fff; }
+  .score-btn.s6  { background: #6a1414; color: #fff; }
+  .score-btn.slow{ background: #1a3a6a; color: #fff; }
+  .score-btn.s0  { background: #2a2a2a; color: #aaa; }
   .btn-end { width: 100%; height: 44px; border-radius: 14px; border: 1px dashed #2a3f52; cursor: pointer; font-size: 14px; font-weight: 600; background: transparent; color: #7a9ab8; margin-bottom: 16px; }
   .btn-end:disabled { color: #2a3f52; cursor: not-allowed; }
   .history-item { background: #1a2a3a; border-radius: 12px; padding: 12px 14px; border: 1px solid #2a3f52; margin-bottom: 8px; }
@@ -170,7 +170,8 @@ const SCORE_LABELS = ["X","10","9","8","7","6","5","4","3","2","1","0"];
 const SCORE_VALUES = { "X":10,"10":10,"9":9,"8":8,"7":7,"6":6,"5":5,"4":4,"3":3,"2":2,"1":1,"0":0 };
 const SCORE_CLASSES = { "X":"sx","10":"s10","9":"s9","8":"s8","7":"s7","6":"s6","5":"slow","4":"slow","3":"slow","2":"slow","1":"slow","0":"s0" };
 // 环数对应圆点颜色（按国际靶色）
-const DOT_COLORS = { "X":"#2ecc71","10":"#5ab8d8","9":"#5ab8d8","8":"#e74c3c","7":"#e74c3c","6":"#3498db","5":"#3498db","4":"#1e1e1e","3":"#1e1e1e","2":"#ffffff","1":"#ffffff","0":"#888" };
+const DOT_COLORS = { "X":"#f1c40f","10":"#f1c40f","9":"#f1c40f","8":"#f1c40f","7":"#e74c3c","6":"#e74c3c","5":"#3498db","4":"#3498db","3":"#2c2c2c","2":"#2c2c2c","1":"#e8edf2","0":"#e8edf2" };
+const DOT_TEXT  = { "X":"#333","10":"#333","9":"#333","8":"#333","7":"#fff","6":"#fff","5":"#fff","4":"#fff","3":"#aaa","2":"#aaa","1":"#333","0":"#333" };
 
 const DEFAULT_STATE = {
   sessionArrows: 0, currentEnd: 0, endCount: 0,
@@ -278,7 +279,7 @@ function render() {
   if (state.currentEndScores.length > 0) {
     scoreDotsEl.innerHTML = state.currentEndScores.map(s => {
       const col = DOT_COLORS[s] || "#7a9ab8";
-      const textCol = (s==="2"||s==="1") ? "#333" : "#fff";
+      const textCol = DOT_TEXT[s] || "#fff";
       return `<div class="score-dot" style="background:${col};color:${textCol}">${s}</div>`;
     }).join("");
   } else {
