@@ -179,8 +179,9 @@ const DEFAULT_STATE = {
   arrowsPerEnd: 6, customEnd: 0, useCustom: false,
   distance: "18m", goalArrows: 72, endHistory: [],
   sessionId: null,
-  currentEndScores: [],   // 当组每箭环数标签 ["X","9","8"...]
-  currentEndScore: 0      // 当组分数合计
+  currentEndScores: [],
+  currentEndScore: 0,
+  lastEnd: null   // 刚完成的那组数据，用于满组后继续显示
 };
 
 function loadState() {
@@ -258,9 +259,11 @@ function render() {
   document.getElementById("statEnds").textContent = state.endCount;
   document.getElementById("statSession").textContent = state.sessionArrows;
 
-  // 本组分数
-  const hasScores = state.currentEndScores.length > 0;
-  document.getElementById("statScore").textContent = hasScores ? state.currentEndScore : "—";
+  // 本组分数：优先显示 lastEnd（满组刚完成），否则显示当组进行中
+  const displayScores = (state.currentEnd === 0 && state.lastEnd) ? state.lastEnd.scores : state.currentEndScores;
+  const displayScore  = (state.currentEnd === 0 && state.lastEnd) ? state.lastEnd.score  : state.currentEndScore;
+  const hasScores = displayScores.length > 0;
+  document.getElementById("statScore").textContent = hasScores ? displayScore : "—";
 
   // 进度条
   const pct = Math.min((state.sessionArrows / state.goalArrows) * 100, 100);
@@ -275,10 +278,11 @@ function render() {
     dotsEl.innerHTML = Array.from({length:e},(_,i)=>`<div class="dot" style="background:${i<state.currentEnd?'#2a7fa8':'#1e2f3d'};border:2px solid ${i<state.currentEnd?'#5ab8d8':'#2a3f52'}"></div>`).join("");
   } else { dotsEl.innerHTML = ""; }
 
-  // 环数小圆点（已记录环数的箭）
+  // 环数小圆点：同上
   const scoreDotsEl = document.getElementById("scoreDots");
-  if (state.currentEndScores.length > 0) {
-    scoreDotsEl.innerHTML = state.currentEndScores.map(s => {
+  const dotScores = (state.currentEnd === 0 && state.lastEnd) ? state.lastEnd.scores : state.currentEndScores;
+  if (dotScores.length > 0) {
+    scoreDotsEl.innerHTML = dotScores.map(s => {
       const col = DOT_COLORS[s] || "#7a9ab8";
       const textCol = DOT_TEXT[s] || "#fff";
       return `<div class="score-dot" style="background:${col};color:${textCol}">${s}</div>`;
@@ -324,6 +328,7 @@ function now() { return new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",mi
 function addArrow(scoreLabel) {
   const e = getEnd();
   if (!state.sessionId) state.sessionId = Date.now();
+  state.lastEnd = null;  // 射新的一箭，清掉上组的显示
   state.currentEnd++;
   state.sessionArrows++;
 
@@ -340,6 +345,7 @@ function addArrow(scoreLabel) {
       score: state.currentEndScores.length > 0 ? state.currentEndScore : null,
       scores: state.currentEndScores.slice()
     });
+    state.lastEnd = { scores: state.currentEndScores.slice(), score: state.currentEndScore };
     state.currentEnd = 0;
     state.currentEndScores = [];
     state.currentEndScore = 0;
