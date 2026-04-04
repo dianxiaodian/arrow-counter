@@ -255,7 +255,8 @@ function renderHistory() {
 
 function render() {
   const e = getEnd();
-  document.getElementById("statEnd").textContent = e > 0 ? `${state.currentEnd} / ${e}` : state.currentEnd;
+  const displayEnd = (state.currentEnd === 0 && state.lastEnd) ? e : state.currentEnd;
+  document.getElementById("statEnd").textContent = e > 0 ? `${displayEnd} / ${e}` : displayEnd;
   document.getElementById("statEnds").textContent = state.endCount;
   document.getElementById("statSession").textContent = state.sessionArrows;
 
@@ -274,8 +275,9 @@ function render() {
 
   // 进度圆点（箭数）
   const dotsEl = document.getElementById("dots");
+  const displayCurrentEnd = (state.currentEnd === 0 && state.lastEnd) ? e : state.currentEnd;
   if (e > 0) {
-    dotsEl.innerHTML = Array.from({length:e},(_,i)=>`<div class="dot" style="background:${i<state.currentEnd?'#2a7fa8':'#1e2f3d'};border:2px solid ${i<state.currentEnd?'#5ab8d8':'#2a3f52'}"></div>`).join("");
+    dotsEl.innerHTML = Array.from({length:e},(_,i)=>`<div class="dot" style="background:${i<displayCurrentEnd?'#2a7fa8':'#1e2f3d'};border:2px solid ${i<displayCurrentEnd?'#5ab8d8':'#2a3f52'}"></div>`).join("");
   } else { dotsEl.innerHTML = ""; }
 
   // 环数小圆点：同上
